@@ -14,6 +14,7 @@ import { useStats, formatTimeElapsed, formatGenerationEstimate, getConvergenceSt
 import { useAnimations } from './hooks/useAnimations';
 import WaveformPreview from './components/WaveformPreview';
 import PatchDetailsPanel from './components/PatchDetailsPanel';
+import ProgressBar from './components/ProgressBar';
 import './styles/animations.css';
 import './Evolution.css';
 
@@ -406,6 +407,19 @@ export const Evolution: React.FC = () => {
           <h3>Fitness Progress</h3>
           <canvas ref={canvasRef} width={400} height={200} />
         </div>
+
+        {state.isRunning && (
+          <div style={{ marginTop: '2rem' }}>
+            <ProgressBar
+              current={state.generation}
+              max={config.maxGenerations}
+              label="Generation Progress"
+              showPercentage={true}
+              color="var(--primary)"
+              animated={true}
+            />
+          </div>
+        )}
       </div>
 
       <div className="evo-population">

@@ -251,7 +251,7 @@ const EnvelopeVisualization: React.FC<{ envelope: EnvelopeConfig }> = ({ envelop
         strokeWidth="2"
       />
 
-      {/* Release indicator (dashed) */
+      {/* Release indicator (dashed) */}
       <line
         x1={width - padding}
         y1={padding + graphHeight * (1 - envelope.sustain)}

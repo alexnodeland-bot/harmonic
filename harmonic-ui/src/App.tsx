@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import './styles/animations.css';
+import './styles/accessibility.css';
 import Evolution from './Evolution';
 import Onboarding from './components/Onboarding';
 import WaveformPreview from './components/WaveformPreview';
@@ -34,20 +35,6 @@ export const App: React.FC = () => {
   
   // Audio feedback
   const { playClickSound, playSuccessChime, playSweepTone, playFadeOut } = useAudio();
-  
-  // Keyboard shortcuts
-  useKeyboardShortcuts({
-    onPlayToggle: () => {
-      // Will be set after togglePlayback is defined
-    },
-    onMutate: () => mutate(),
-    onRandom: () => generatePatch(),
-    onExport: () => exportPatch(),
-    onShowHelp: () => {
-      const overlay = createHelpOverlay();
-      document.body.appendChild(overlay);
-    },
-  });
 
   // Spectrum visualization
   useEffect(() => {
@@ -166,6 +153,17 @@ export const App: React.FC = () => {
     reader.readAsText(file);
   };
 
+  useKeyboardShortcuts({
+    onPlayToggle: togglePlayback,
+    onMutate: mutate,
+    onRandom: generatePatch,
+    onExport: exportPatch,
+    onShowHelp: () => {
+      const overlay = createHelpOverlay();
+      document.body.appendChild(overlay);
+    },
+  });
+
   if (mode === 'evolve') {
     return (
       <div className="app">
@@ -201,10 +199,22 @@ export const App: React.FC = () => {
 
       <main className="app-main">
         <div className="mode-tabs">
-          <button className="mode-tab active" onClick={() => setMode('explore')} data-onboarding="explore-tab">
+          <button
+            className="mode-tab active"
+            onClick={() => setMode('explore')}
+            data-onboarding="explore-tab"
+            data-tooltip="Explore patches manually"
+            aria-pressed={mode === 'explore'}
+          >
             🎚️ Explore
           </button>
-          <button className="mode-tab" onClick={() => setMode('evolve')} data-onboarding="evolve-tab">
+          <button
+            className="mode-tab"
+            onClick={() => setMode('evolve')}
+            data-onboarding="evolve-tab"
+            data-tooltip="Switch to Evolution mode"
+            aria-pressed={mode === 'evolve'}
+          >
             🧬 Evolve
           </button>
         </div>
@@ -214,29 +224,36 @@ export const App: React.FC = () => {
           <section className="control-panel">
             <h2>Patch Control</h2>
             <div className="button-group">
-              <button onClick={generatePatch} className="btn btn-primary" data-onboarding="random-btn">
+              <button
+                onClick={generatePatch}
+                className="btn btn-primary"
+                data-onboarding="random-btn"
+                data-tooltip="Try generating a random patch"
+              >
                 ✨ Random
               </button>
-              <button onClick={mutate} className="btn btn-secondary">
+              <button onClick={mutate} className="btn btn-secondary" data-tooltip="Mutate current patch">
                 🧬 Mutate
               </button>
               <button
                 onClick={togglePlayback}
                 className={`btn ${isPlaying ? 'btn-danger' : 'btn-success'}`}
                 data-onboarding="play-btn"
+                data-tooltip={isPlaying ? 'Stop playback (Space)' : 'Play patch (Space)'}
+                aria-pressed={isPlaying}
               >
                 {isPlaying ? '⏹️ Stop' : '▶️ Play'}
               </button>
             </div>
 
             <div className="button-group">
-              <button onClick={analyzePatch} className="btn btn-secondary">
+              <button onClick={analyzePatch} className="btn btn-secondary" data-tooltip="Analyze oscillators">
                 📊 Analyze
               </button>
-              <button onClick={exportPatch} className="btn btn-secondary">
+              <button onClick={exportPatch} className="btn btn-secondary" data-tooltip="Export patch (E)">
                 💾 Export
               </button>
-              <label className="btn btn-secondary">
+              <label className="btn btn-secondary" data-tooltip="Import patch JSON">
                 📂 Import
                 <input
                   type="file"
