@@ -9,14 +9,6 @@ import {
   type PatchConfig,
   type FitnessMetrics,
 } from './synth';
-import { useAudio } from './hooks/useAudio';
-import { useStats, formatTimeElapsed, formatGenerationEstimate, getConvergenceStatus, getConvergenceStatusColor } from './hooks/useStats';
-import { useAnimations } from './hooks/useAnimations';
-import WaveformPreview from './components/WaveformPreview';
-import PatchDetailsPanel from './components/PatchDetailsPanel';
-import ProgressBar from './components/ProgressBar';
-import './styles/animations.css';
-import './Evolution.css';
 
 interface PopulationEntry {
   patch: PatchConfig;
@@ -59,18 +51,7 @@ export const Evolution: React.FC = () => {
 
   const [selectedPatch, setSelectedPatch] = useState<PopulationEntry | null>(null);
   const [playingPatch, setPlayingPatch] = useState<string | null>(null);
-  const [startTimeMs, setStartTimeMs] = useState<number | undefined>();
-  const [bestFitnessThisSession, setBestFitnessThisSession] = useState<number>(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
-  // Audio feedback
-  const { playSuccessChime, playSweepTone } = useAudio();
-  
-  // Animations
-  const { staggerElements, celebrationGlow } = useAnimations();
-  
-  // Stats
-  const stats = useStats(state.history, startTimeMs);
 
   // Initialize population
   const initializePopulation = () => {
@@ -88,14 +69,12 @@ export const Evolution: React.FC = () => {
   // Evolution loop
   const runEvolution = async () => {
     setState((prev) => ({ ...prev, isRunning: true }));
-    setStartTimeMs(Date.now());
-    setBestFitnessThisSession(0);
 
     let population = state.population.length > 0 ? state.population : initializePopulation();
     let generation = state.generation || 0;
     const history: typeof state.history = [];
 
-    for (gen; gen < config.maxGenerations; gen++) {
+    for (let gen = generation; gen < config.maxGenerations; gen++) {
       // Evaluate population
       population = population.map((entry) => ({
         ...entry,
@@ -107,22 +86,12 @@ export const Evolution: React.FC = () => {
 
       // Track history
       const fitnesses = population.map((p) => p.metrics.fitness);
-      const bestFitness = Math.max(...fitnesses);
-      const avgFitness = fitnesses.reduce((a, b) => a + b) / fitnesses.length;
-      const worstFitness = Math.min(...fitnesses);
-      
       history.push({
         gen,
-        best: bestFitness,
-        avg: avgFitness,
-        worst: worstFitness,
+        best: Math.max(...fitnesses),
+        avg: fitnesses.reduce((a, b) => a + b) / fitnesses.length,
+        worst: Math.min(...fitnesses),
       });
-      
-      // Celebration logic: new best found
-      if (bestFitness > bestFitnessThisSession) {
-        setBestFitnessThisSession(bestFitness);
-        playSuccessChime();
-      }
 
       // Keep elite
       const elite = population.slice(0, config.eliteSize);
@@ -185,8 +154,8 @@ export const Evolution: React.FC = () => {
       // Yield to browser
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      // Check if still running
-      if (!state.isRunning) break;
+      // Check if still running (via state)
+      if (!state.isRunning && gen > generation) break;
     }
 
     setState((prev) => ({ ...prev, isRunning: false }));
@@ -210,6 +179,7 @@ export const Evolution: React.FC = () => {
 
     // Draw axes
     ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padding, canvas.height - padding);
     ctx.lineTo(canvas.width - padding, canvas.height - padding);
@@ -217,7 +187,7 @@ export const Evolution: React.FC = () => {
     ctx.lineTo(padding, canvas.height - padding);
     ctx.stroke();
 
-    // Draw lines for best/avg/worst
+    // Draw lines for best/avg
     const drawLine = (data: number[], color: string) => {
       ctx.strokeStyle = color;
       ctx.lineWidth = 2;
@@ -243,7 +213,7 @@ export const Evolution: React.FC = () => {
     ctx.fillStyle = '#999';
     ctx.font = '12px monospace';
     ctx.fillText('Gen 0', padding, canvas.height - padding + 20);
-    ctx.fillText(`Gen ${history.length - 1}`, canvas.width - padding - 40, canvas.height - padding + 20);
+    ctx.fillText(`Gen ${history.length - 1}`, canvas.width - padding - 60, canvas.height - padding + 20);
     ctx.fillText('Fitness', 5, 20);
   };
 
@@ -371,34 +341,6 @@ export const Evolution: React.FC = () => {
                 <label>Avg Fitness</label>
                 <span>{state.history[state.history.length - 1].avg.toFixed(3)}</span>
               </div>
-              <div className="stat">
-                <label>Improvement Rate</label>
-                <span>{stats.improvementRate.toFixed(4)}</span>
-              </div>
-              <div className="stat">
-                <label>Diversity</label>
-                <span>{(stats.populationDiversity * 100).toFixed(1)}%</span>
-              </div>
-              <div className="stat">
-                <label>Time Elapsed</label>
-                <span>{formatTimeElapsed(stats.timeElapsedMs)}</span>
-              </div>
-              {stats.bestGeneration !== null && (
-                <div className="stat">
-                  <label>Best Generation</label>
-                  <span>Gen {stats.bestGeneration}</span>
-                </div>
-              )}
-              <div className="stat">
-                <label>Est. Convergence</label>
-                <span>{formatGenerationEstimate(stats.estimatedConvergenceGen, state.generation)}</span>
-              </div>
-              <div className="stat">
-                <label>Status</label>
-                <span style={{ color: getConvergenceStatusColor(stats.convergenceScore) }}>
-                  {getConvergenceStatus(stats.convergenceScore)}
-                </span>
-              </div>
             </>
           )}
         </div>
@@ -407,19 +349,6 @@ export const Evolution: React.FC = () => {
           <h3>Fitness Progress</h3>
           <canvas ref={canvasRef} width={400} height={200} />
         </div>
-
-        {state.isRunning && (
-          <div style={{ marginTop: '2rem' }}>
-            <ProgressBar
-              current={state.generation}
-              max={config.maxGenerations}
-              label="Generation Progress"
-              showPercentage={true}
-              color="var(--primary)"
-              animated={true}
-            />
-          </div>
-        )}
       </div>
 
       <div className="evo-population">
@@ -432,14 +361,12 @@ export const Evolution: React.FC = () => {
                 selectedPatch?.patch.id === entry.patch.id ? 'selected' : ''
               }`}
               style={{
-                backgroundColor: `rgba(${Math.floor((1 - entry.metrics.fitness) * 255)}, ${Math.floor(entry.metrics.fitness * 200)}, 0, 0.08)`,
+                backgroundColor: `rgba(0, 255, ${Math.floor(entry.metrics.fitness * 255)}, 0.1)`,
               }}
             >
               <div className="patch-header">
                 <span className="rank">#{i + 1}</span>
-                <span className="fitness" style={{ 
-                  color: `hsl(${Math.max(0, Math.min(120, entry.metrics.fitness * 120))}, 100%, ${50 - entry.metrics.fitness * 10}%)` 
-                }}>
+                <span className="fitness" style={{ color: `hsl(${entry.metrics.fitness * 120}, 100%, 50%)` }}>
                   {entry.metrics.fitness.toFixed(3)}
                 </span>
               </div>
@@ -470,44 +397,29 @@ export const Evolution: React.FC = () => {
 
       {selectedPatch && (
         <div className="patch-detail">
-          <PatchDetailsPanel
-            patch={selectedPatch.patch}
-            fitness={selectedPatch.metrics.fitness}
-            generation={selectedPatch.generation}
-            rank={state.population.indexOf(selectedPatch) + 1}
+          <h2>Selected Patch #{state.population.indexOf(selectedPatch) + 1}</h2>
+          <textarea
+            value={JSON.stringify(selectedPatch.patch, null, 2)}
+            readOnly
+            className="patch-json"
           />
-          
-          {/* Waveform Preview */}
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>🌊 Waveform Preview</h3>
-            <WaveformPreview patch={selectedPatch.patch} width={400} height={150} />
-          </div>
-          
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>📄 Patch JSON</h3>
-            <textarea
-              value={JSON.stringify(selectedPatch.patch, null, 2)}
-              readOnly
-              className="patch-json"
-            />
-            <button
-              onClick={() => {
-                const element = document.createElement('a');
-                element.setAttribute(
-                  'href',
-                  'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedPatch.patch, null, 2))
-                );
-                element.setAttribute('download', `patch-${selectedPatch.patch.id}.json`);
-                element.style.display = 'none';
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-              }}
-              className="btn btn-primary"
-            >
-              💾 Export
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              const element = document.createElement('a');
+              element.setAttribute(
+                'href',
+                'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedPatch.patch, null, 2))
+              );
+              element.setAttribute('download', `patch-${selectedPatch.patch.id}.json`);
+              element.style.display = 'none';
+              document.body.appendChild(element);
+              element.click();
+              document.body.removeChild(element);
+            }}
+            className="btn btn-primary"
+          >
+            💾 Export
+          </button>
         </div>
       )}
     </div>
