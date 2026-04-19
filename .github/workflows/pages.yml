@@ -19,8 +19,24 @@ jobs:
       - name: Install mdbook
         uses: taiki-e/install-action@mdbook
       
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
       - name: Build book
         run: mdbook build docs
+      
+      - name: Install UI dependencies
+        working-directory: harmonic-ui
+        run: npm install
+      
+      - name: Build UI
+        working-directory: harmonic-ui
+        run: npm run build
+      
+      - name: Colocate UI with docs
+        run: cp -r harmonic-ui/dist docs/book/ui
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

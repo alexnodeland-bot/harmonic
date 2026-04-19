@@ -61,6 +61,14 @@ harmonic export --patch best.json --output final.json
 - **Optimization**: Fine-tune synthesis parameters automatically
 - **Research**: Study audio synthesis and genetic algorithms
 
+## Try the Web UI
+
+The interactive demo is deployed alongside the docs:
+
+👉 **[Launch Web UI](../ui/)**
+
+(Build and tune patches visually in your browser)
+
 ## Next Steps
 
 - [Quick Start](quickstart.md): Get up and running in 5 minutes
