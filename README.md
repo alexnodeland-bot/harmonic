@@ -1,7 +1,7 @@
 # 🎵 Harmonic
 
-[![CI](https://github.com/alexnodeland/harmonic/workflows/CI/badge.svg)](https://github.com/alexnodeland/harmonic/actions)
-[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexnodeland.github.io/harmonic/)
+[![CI](https://github.com/alexnodeland-bot/harmonic/workflows/CI/badge.svg)](https://github.com/alexnodeland-bot/harmonic/actions)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexnodeland-bot.github.io/harmonic/)
 [![Crates.io](https://img.shields.io/crates/v/harmonic-core.svg)](https://crates.io/crates/harmonic-core)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -15,16 +15,16 @@
 3. Select **Branch**: `main` | **Folder**: `/docs`
 4. Save
 
-Then visit: https://alexnodeland.github.io/harmonic/
+Then visit: https://alexnodeland-bot.github.io/harmonic/
 
 Explore the complete guide:
-- [Introduction](https://alexnodeland.github.io/harmonic/intro.html)
-- [Quick Start](https://alexnodeland.github.io/harmonic/quickstart.html)
-- [Core Concepts](https://alexnodeland.github.io/harmonic/concepts.html)
-- [API Reference](https://alexnodeland.github.io/harmonic/api.html)
-- [Examples](https://alexnodeland.github.io/harmonic/examples.html)
-- [Performance Tips](https://alexnodeland.github.io/harmonic/performance.html)
-- [Architecture](https://alexnodeland.github.io/harmonic/architecture.html)
+- [Introduction](https://alexnodeland-bot.github.io/harmonic/intro.html)
+- [Quick Start](https://alexnodeland-bot.github.io/harmonic/quickstart.html)
+- [Core Concepts](https://alexnodeland-bot.github.io/harmonic/concepts.html)
+- [API Reference](https://alexnodeland-bot.github.io/harmonic/api.html)
+- [Examples](https://alexnodeland-bot.github.io/harmonic/examples.html)
+- [Performance Tips](https://alexnodeland-bot.github.io/harmonic/performance.html)
+- [Architecture](https://alexnodeland-bot.github.io/harmonic/architecture.html)
 
 ## Features
 
@@ -57,7 +57,7 @@ harmonic/
 ### Installation
 
 ```bash
-git clone https://github.com/alexnodeland/harmonic.git
+git clone https://github.com/alexnodeland-bot/harmonic.git
 cd harmonic
 cargo build --release
 ```

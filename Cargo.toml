@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Alex Nodeland <alex@ournature.studio>"]
 license = "MIT"
-repository = "https://github.com/alexnodeland/harmonic"
+repository = "https://github.com/alexnodeland-bot/harmonic"
 
 [workspace.dependencies]
 ndarray = { version = "0.15", features = ["serde"] }

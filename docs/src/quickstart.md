@@ -7,7 +7,7 @@ Get up and running with Harmonic in 5 minutes.
 ### Build from source
 
 ```bash
-git clone https://github.com/alexnodeland/harmonic.git
+git clone https://github.com/alexnodeland-bot/harmonic.git
 cd harmonic
 cargo build --release
 ```
