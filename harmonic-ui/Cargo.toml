@@ -1,0 +1,16 @@
+[package]
+name = "harmonic-ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+harmonic-core = { path = "../harmonic-core" }
+
+[dev-dependencies]
+wasm-bindgen-test = "1"

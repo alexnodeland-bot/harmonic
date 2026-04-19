@@ -1,0 +1,27 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node
+node_modules/
+dist/
+*.log
+
+# WASM
+/harmonic-ui/pkg/
+/harmonic-ui/wasm-pack.log
+
+# Generated
+best_patch.json
+evolution.json
+*.wav
+*.mp3

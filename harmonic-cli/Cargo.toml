@@ -1,0 +1,25 @@
+[package]
+name = "harmonic-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "harmonic"
+path = "src/main.rs"
+
+[dependencies]
+harmonic-core = { path = "../harmonic-core" }
+fugue-evo = { workspace = true }
+quiver = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+clap = { workspace = true }
+anyhow = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+tui = { workspace = true }
+crossterm = { workspace = true }
+rand = { workspace = true }
