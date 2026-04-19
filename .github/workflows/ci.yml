@@ -73,3 +73,5 @@ jobs:
       - run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: -D warnings
+      - uses: taiki-e/install-action@mdbook
+      - run: mdbook build docs
