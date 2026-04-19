@@ -42,7 +42,7 @@ impl Default for Fitness {
 
 impl PartialOrd for Fitness {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.score.partial_cmp(&other.score)
+        Some(self.cmp(other))
     }
 }
 
@@ -50,7 +50,9 @@ impl Eq for Fitness {}
 
 impl Ord for Fitness {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap_or(Ordering::Equal)
+        self.score
+            .partial_cmp(&other.score)
+            .unwrap_or(Ordering::Equal)
     }
 }
 
@@ -137,7 +139,7 @@ impl FitnessEvaluator {
         let mut spectrum = vec![0.0; n / 2];
 
         // Simple DFT for demonstration (in production, use proper FFT library)
-        for k in 0..spectrum.len() {
+        for (k, spectrum_val) in spectrum.iter_mut().enumerate() {
             let mut real = 0.0;
             let mut imag = 0.0;
             let angle_step = 2.0 * std::f32::consts::PI * k as f32 / n as f32;
@@ -148,7 +150,7 @@ impl FitnessEvaluator {
                 imag += sample * angle.sin();
             }
 
-            spectrum[k] = (real * real + imag * imag).sqrt() / n as f32;
+            *spectrum_val = (real * real + imag * imag).sqrt() / n as f32;
         }
 
         spectrum
@@ -156,8 +158,7 @@ impl FitnessEvaluator {
 
     /// Compute energy of audio signal
     fn compute_energy(&self, audio_data: &[f32]) -> f32 {
-        let rms = (audio_data.iter().map(|&s| s * s).sum::<f32>() / audio_data.len() as f32)
-            .sqrt();
+        let rms = (audio_data.iter().map(|&s| s * s).sum::<f32>() / audio_data.len() as f32).sqrt();
         // Normalize to 0-1 range (assuming max amplitude 1.0)
         rms.clamp(0.0, 1.0)
     }
@@ -250,5 +251,93 @@ mod tests {
         let audio = vec![0.5; 1024];
         let fitness = evaluator.evaluate(&audio);
         assert!(fitness.score >= 0.0 && fitness.score <= 1.0);
+    }
+
+    #[test]
+    fn test_fitness_clamping() {
+        let fitness = Fitness::new(2.0, 0.0, 0.0, 0.0);
+        assert_eq!(fitness.score, 1.0);
+
+        let fitness2 = Fitness::new(-1.0, 0.0, 0.0, 0.0);
+        assert_eq!(fitness2.score, 0.0);
+    }
+
+    #[test]
+    fn test_fitness_default() {
+        let fitness = Fitness::default();
+        assert_eq!(fitness.score, 0.0);
+        assert_eq!(fitness.spectrum_distance, f32::MAX);
+    }
+
+    #[test]
+    fn test_weights_custom() {
+        let weights = FitnessWeights {
+            spectrum_weight: 0.5,
+            energy_weight: 0.3,
+            centroid_weight: 0.2,
+            target_energy: 0.6,
+            target_centroid: 1500.0,
+        };
+        assert_eq!(weights.spectrum_weight, 0.5);
+    }
+
+    #[test]
+    fn test_evaluator_zero_audio() {
+        let evaluator = FitnessEvaluator::new(FitnessWeights::default(), None);
+        let audio = vec![0.0; 1024];
+        let fitness = evaluator.evaluate(&audio);
+        assert!(fitness.score >= 0.0);
+    }
+
+    #[test]
+    fn test_evaluator_with_target_spectrum() {
+        let target = vec![0.1; 512];
+        let evaluator = FitnessEvaluator::new(FitnessWeights::default(), Some(target));
+        let audio = vec![0.5; 1024];
+        let fitness = evaluator.evaluate(&audio);
+        assert!(fitness.score >= 0.0 && fitness.score <= 1.0);
+    }
+
+    #[test]
+    fn test_spectrum_distance_zero() {
+        let evaluator = FitnessEvaluator::new(FitnessWeights::default(), None);
+        let spectrum = vec![0.1; 512];
+        let spectrum_target = vec![0.1; 512];
+        let distance = evaluator.spectrum_distance(&spectrum, &spectrum_target);
+        assert!(distance >= 0.0);
+    }
+
+    #[test]
+    fn test_fitness_comparison_operators() {
+        let f1 = Fitness::new(0.8, 0.0, 0.0, 0.0);
+        let f2 = Fitness::new(0.6, 0.0, 0.0, 0.0);
+        let f3 = Fitness::new(0.8, 0.0, 0.0, 0.0);
+
+        assert!(f1 > f2);
+        assert!(f1 >= f3);
+        assert!(f2 < f1);
+        assert!(f2 <= f1);
+    }
+
+    #[test]
+    fn test_energy_computation_range() {
+        let evaluator = FitnessEvaluator::new(FitnessWeights::default(), None);
+        let audio_quiet = vec![0.1; 1024];
+        let audio_loud = vec![0.9; 1024];
+
+        let energy_quiet = evaluator.compute_energy(&audio_quiet);
+        let energy_loud = evaluator.compute_energy(&audio_loud);
+
+        assert!(energy_quiet < energy_loud);
+        assert!((0.0..=1.0).contains(&energy_quiet));
+        assert!((0.0..=1.0).contains(&energy_loud));
+    }
+
+    #[test]
+    fn test_centroid_empty_spectrum() {
+        let evaluator = FitnessEvaluator::new(FitnessWeights::default(), None);
+        let spectrum = vec![0.0; 512];
+        let centroid = evaluator.compute_centroid(&spectrum);
+        assert_eq!(centroid, 0.0);
     }
 }

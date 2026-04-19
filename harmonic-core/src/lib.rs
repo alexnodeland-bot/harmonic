@@ -1,12 +1,12 @@
-pub mod genome;
-pub mod fitness;
 pub mod audio;
 pub mod config;
+pub mod fitness;
+pub mod genome;
 
-pub use genome::{Genome, GenomeEncoding};
-pub use fitness::{Fitness, FitnessEvaluator};
 pub use audio::AudioAnalyzer;
 pub use config::EvolutionConfig;
+pub use fitness::{Fitness, FitnessEvaluator, FitnessWeights};
+pub use genome::{Genome, GenomeEncoding};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Individual {

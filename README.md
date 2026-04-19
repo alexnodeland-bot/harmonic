@@ -1,6 +1,22 @@
 # 🎵 Harmonic
 
+[![CI](https://github.com/alexnodeland/harmonic/workflows/CI/badge.svg)](https://github.com/alexnodeland/harmonic/actions)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://alexnodeland.github.io/harmonic/)
+[![Crates.io](https://img.shields.io/crates/v/harmonic-core.svg)](https://crates.io/crates/harmonic-core)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 **Harmonic** is a Rust library and CLI tool for evolving audio synthesis patches using genetic algorithms and fugue-evo. It combines the power of evolutionary computing with audio synthesis to discover novel and interesting soundscapes.
+
+## 📚 [Full Documentation](https://alexnodeland.github.io/harmonic/)
+
+Explore the complete guide:
+- [Introduction](https://alexnodeland.github.io/harmonic/intro.html)
+- [Quick Start](https://alexnodeland.github.io/harmonic/quickstart.html)
+- [Core Concepts](https://alexnodeland.github.io/harmonic/concepts.html)
+- [API Reference](https://alexnodeland.github.io/harmonic/api.html)
+- [Examples](https://alexnodeland.github.io/harmonic/examples.html)
+- [Performance Tips](https://alexnodeland.github.io/harmonic/performance.html)
+- [Architecture](https://alexnodeland.github.io/harmonic/architecture.html)
 
 ## Features
 

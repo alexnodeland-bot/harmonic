@@ -1,20 +1,22 @@
 /// TUI components for the harmonic CLI
 /// This module provides terminal UI elements for displaying evolution progress
-
 pub struct ProgressBar {
     current: u32,
     total: u32,
 }
 
 impl ProgressBar {
+    #[allow(dead_code)]
     pub fn new(total: u32) -> Self {
         Self { current: 0, total }
     }
 
+    #[allow(dead_code)]
     pub fn advance(&mut self) {
         self.current = self.current.saturating_add(1);
     }
 
+    #[allow(dead_code)]
     pub fn render(&self) -> String {
         let bar_width = 40;
         let filled = (self.current as f32 / self.total as f32 * bar_width as f32) as usize;
@@ -33,6 +35,7 @@ impl ProgressBar {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct EvolutionDisplay {
     pub generation: u32,
     pub best_fitness: f32,
@@ -41,6 +44,7 @@ pub struct EvolutionDisplay {
 }
 
 impl EvolutionDisplay {
+    #[allow(dead_code)]
     pub fn render(&self) -> String {
         format!(
             "Generation: {}\nBest: {:.4}\nAvg: {:.4}\nImprovement: {:.4}",

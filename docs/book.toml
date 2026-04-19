@@ -1,0 +1,10 @@
+[book]
+title = "Harmonic"
+authors = ["Alex Nodeland"]
+description = "A Rust library and CLI tool for evolving audio synthesis patches using genetic algorithms"
+language = "en"
+src = "src"
+output.html.theme = "theme"
+
+[output.html]
+mathjax-support = true

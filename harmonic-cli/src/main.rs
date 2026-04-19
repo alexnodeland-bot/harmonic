@@ -1,9 +1,9 @@
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+mod commands;
 mod evolve;
 mod ui;
-mod commands;
 
 use commands::*;
 
@@ -70,7 +70,10 @@ async fn main() -> anyhow::Result<()> {
         Commands::Init { dir, config } => {
             init_command(&dir, &config)?;
         }
-        Commands::Run { config, generations } => {
+        Commands::Run {
+            config,
+            generations,
+        } => {
             run_command(&config, generations).await?;
         }
         Commands::Export { patch, output } => {

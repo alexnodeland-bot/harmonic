@@ -43,14 +43,8 @@ impl AudioAnalyzer {
                     .get("frequency")
                     .and_then(|v| v.as_f64())
                     .unwrap_or(440.0) as f32;
-                let amp = osc
-                    .get("amplitude")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.5) as f32;
-                let phase = osc
-                    .get("phase")
-                    .and_then(|v| v.as_f64())
-                    .unwrap_or(0.0) as f32;
+                let amp = osc.get("amplitude").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
+                let phase = osc.get("phase").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
 
                 // Generate sine wave
                 for (i, sample) in audio.iter_mut().enumerate() {
@@ -63,29 +57,18 @@ impl AudioAnalyzer {
 
         // Apply envelope if present
         if let Some(env) = patch.get("envelope").and_then(|v| v.as_object()) {
-            let attack = env
-                .get("attack")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.01) as f32;
-            let decay = env
-                .get("decay")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.2) as f32;
-            let sustain = env
-                .get("sustain")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.7) as f32;
-            let release = env
-                .get("release")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.5) as f32;
+            let attack = env.get("attack").and_then(|v| v.as_f64()).unwrap_or(0.01) as f32;
+            let decay = env.get("decay").and_then(|v| v.as_f64()).unwrap_or(0.2) as f32;
+            let sustain = env.get("sustain").and_then(|v| v.as_f64()).unwrap_or(0.7) as f32;
+            let release = env.get("release").and_then(|v| v.as_f64()).unwrap_or(0.5) as f32;
 
             let attack_samples = (attack * self.sample_rate) as usize;
             let decay_samples = (decay * self.sample_rate) as usize;
             let release_samples = (release * self.sample_rate) as usize;
-            let sustain_samples = num_samples.saturating_sub(attack_samples + decay_samples + release_samples);
+            let sustain_samples =
+                num_samples.saturating_sub(attack_samples + decay_samples + release_samples);
 
-            for i in 0..num_samples {
+            for (i, sample) in audio.iter_mut().enumerate().take(num_samples) {
                 let env_val = if i < attack_samples {
                     i as f32 / attack_samples as f32
                 } else if i < attack_samples + decay_samples {
@@ -97,7 +80,7 @@ impl AudioAnalyzer {
                     let release_i = i - (attack_samples + decay_samples + sustain_samples);
                     sustain * (1.0 - (release_i as f32 / release_samples as f32))
                 };
-                audio[i] *= env_val;
+                *sample *= env_val;
             }
         }
 
@@ -107,7 +90,7 @@ impl AudioAnalyzer {
                 .get("cutoff")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(8000.0) as f32;
-            
+
             // Simple RC lowpass filter coefficient
             let rc = 1.0 / (2.0 * std::f32::consts::PI * cutoff);
             let dt = 1.0 / self.sample_rate;
@@ -133,21 +116,21 @@ impl AudioAnalyzer {
     /// Analyze audio spectral characteristics
     pub fn analyze_spectrum(&self, audio: &[f32]) -> SpectralAnalysis {
         let rms = (audio.iter().map(|&s| s * s).sum::<f32>() / audio.len() as f32).sqrt();
-        
+
         // Simple spectrum computation
         let n = audio.len();
         let mut spectrum = vec![0.0; n / 2];
-        for k in 0..spectrum.len() {
+        for (k, spectrum_val) in spectrum.iter_mut().enumerate() {
             let mut real = 0.0;
             let mut imag = 0.0;
             let angle_step = 2.0 * std::f32::consts::PI * k as f32 / n as f32;
-            
+
             for (i, &sample) in audio.iter().enumerate() {
                 let angle = angle_step * i as f32;
                 real += sample * angle.cos();
                 imag += sample * angle.sin();
             }
-            spectrum[k] = (real * real + imag * imag).sqrt() / n as f32;
+            *spectrum_val = (real * real + imag * imag).sqrt() / n as f32;
         }
 
         let sum: f32 = spectrum.iter().sum();
@@ -208,6 +191,93 @@ mod tests {
         let audio = vec![0.5; 4410];
         let analysis = analyzer.analyze_spectrum(&audio);
         assert!(analysis.rms > 0.0);
-        assert!(analysis.spectrum.len() > 0);
+        assert!(!analysis.spectrum.is_empty());
+    }
+
+    #[test]
+    fn test_synthesize_with_envelope() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let patch = json!({
+            "oscillators": [
+                {"frequency": 440.0, "amplitude": 0.5, "phase": 0.0}
+            ],
+            "envelope": {
+                "attack": 0.01,
+                "decay": 0.02,
+                "sustain": 0.7,
+                "release": 0.05
+            }
+        });
+        let audio = analyzer.synthesize(&patch).unwrap();
+        assert_eq!(audio.len(), 4410);
+        let max = audio.iter().map(|x| x.abs()).fold(0.0, f32::max);
+        assert!(max <= 1.0);
+    }
+
+    #[test]
+    fn test_synthesize_with_filter() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let patch = json!({
+            "oscillators": [
+                {"frequency": 440.0, "amplitude": 0.5, "phase": 0.0}
+            ],
+            "filter": {
+                "cutoff": 2000.0
+            }
+        });
+        let audio = analyzer.synthesize(&patch).unwrap();
+        assert_eq!(audio.len(), 4410);
+    }
+
+    #[test]
+    fn test_spectrum_analysis_energy() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let audio_silent = vec![0.0; 4410];
+        let audio_loud = vec![1.0; 4410];
+
+        let analysis_silent = analyzer.analyze_spectrum(&audio_silent);
+        let analysis_loud = analyzer.analyze_spectrum(&audio_loud);
+
+        assert!(analysis_loud.rms > analysis_silent.rms);
+    }
+
+    #[test]
+    fn test_spectrum_centroid() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let audio = vec![0.5; 4410];
+        let analysis = analyzer.analyze_spectrum(&audio);
+
+        assert!(analysis.centroid >= 0.0);
+        assert!(analysis.centroid.is_finite());
+    }
+
+    #[test]
+    fn test_synthesize_multiple_oscillators() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let patch = json!({
+            "oscillators": [
+                {"frequency": 440.0, "amplitude": 0.3, "phase": 0.0},
+                {"frequency": 880.0, "amplitude": 0.2, "phase": 0.0},
+                {"frequency": 1320.0, "amplitude": 0.1, "phase": 0.0}
+            ]
+        });
+        let audio = analyzer.synthesize(&patch).unwrap();
+        assert_eq!(audio.len(), 4410);
+        let max = audio.iter().map(|x| x.abs()).fold(0.0, f32::max);
+        assert!(max > 0.0);
+    }
+
+    #[test]
+    fn test_audio_normalization() {
+        let analyzer = AudioAnalyzer::new(44100.0, 0.1);
+        let patch = json!({
+            "oscillators": [
+                {"frequency": 440.0, "amplitude": 10.0, "phase": 0.0}
+            ]
+        });
+        let audio = analyzer.synthesize(&patch).unwrap();
+        let max = audio.iter().map(|x| x.abs()).fold(0.0, f32::max);
+        // Should be normalized to max 1.0
+        assert!(max <= 1.0 + 1e-5);
     }
 }

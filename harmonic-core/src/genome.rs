@@ -96,7 +96,11 @@ impl Genome {
         use rand::Rng;
         let mut rng = rand::thread_rng();
 
-        if let Some(oscs) = self.patch.get_mut("oscillators").and_then(|v| v.as_array_mut()) {
+        if let Some(oscs) = self
+            .patch
+            .get_mut("oscillators")
+            .and_then(|v| v.as_array_mut())
+        {
             for osc in oscs.iter_mut() {
                 if rng.gen::<f32>() < mutation_rate {
                     if let Some(freq) = osc.get_mut("frequency") {
@@ -113,7 +117,11 @@ impl Genome {
             }
         }
 
-        if let Some(env) = self.patch.get_mut("envelope").and_then(|v| v.as_object_mut()) {
+        if let Some(env) = self
+            .patch
+            .get_mut("envelope")
+            .and_then(|v| v.as_object_mut())
+        {
             for (_, val) in env.iter_mut() {
                 if rng.gen::<f32>() < mutation_rate {
                     if let Some(v) = val.as_f64() {
@@ -231,5 +239,60 @@ mod tests {
         let g2 = Genome::random();
         let offspring = g1.crossover(&g2);
         assert!(offspring.patch.get("oscillators").is_some());
+    }
+
+    #[test]
+    fn test_genome_multiple_mutations() {
+        let mut genome = Genome::random();
+        let original = genome.patch.clone();
+
+        // Apply mutations multiple times
+        for _ in 0..5 {
+            genome.mutate(0.5);
+        }
+
+        // Should be different overall
+        assert_ne!(genome.patch, original);
+    }
+
+    #[test]
+    fn test_genome_zero_mutation_rate() {
+        let mut genome = Genome::random();
+        let original = genome.patch.clone();
+        genome.mutate(0.0);
+        // Should not change with 0% mutation rate
+        assert_eq!(genome.patch, original);
+    }
+
+    #[test]
+    fn test_crossover_preserves_structure() {
+        let g1 = Genome::random();
+        let g2 = Genome::random();
+        let offspring = g1.crossover(&g2);
+
+        // Offspring should have the expected fields
+        assert!(offspring.patch.is_object());
+        assert!(offspring.patch.get("oscillators").is_some());
+    }
+
+    #[test]
+    fn test_genome_json_string_conversion() {
+        let patch = json!({
+            "oscillators": [{"type": "sine", "frequency": 440.0}]
+        });
+        let genome = Genome::new(patch);
+        let json_string = genome.to_json_string().unwrap();
+        assert!(json_string.contains("oscillators"));
+        assert!(json_string.contains("440"));
+    }
+
+    #[test]
+    fn test_genome_metadata() {
+        let mut genome = Genome::random();
+        genome.metadata.generation = 5;
+        genome.metadata.id = "test-id".to_string();
+
+        assert_eq!(genome.metadata.generation, 5);
+        assert_eq!(genome.metadata.id, "test-id");
     }
 }

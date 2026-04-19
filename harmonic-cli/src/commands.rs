@@ -11,7 +11,10 @@ pub fn init_command(dir: &PathBuf, config_path: &PathBuf) -> anyhow::Result<()> 
     println!("✓ Initialized harmonic project in {:?}", dir);
     println!("✓ Created config at {:?}", full_path);
     println!("\nNext steps:");
-    println!("  1. Edit {} to customize parameters", config_path.display());
+    println!(
+        "  1. Edit {} to customize parameters",
+        config_path.display()
+    );
     println!("  2. Run: harmonic run --config {}", config_path.display());
 
     Ok(())
@@ -35,7 +38,10 @@ pub async fn run_command(config_path: &PathBuf, generations: Option<u32>) -> any
     let best = runner.run().await?;
 
     println!("\n✓ Evolution complete!");
-    println!("  Best fitness: {:.4}", best.fitness.map(|f| f.score).unwrap_or(0.0));
+    println!(
+        "  Best fitness: {:.4}",
+        best.fitness.map(|f| f.score).unwrap_or(0.0)
+    );
     println!("  Patch saved to: best_patch.json");
 
     Ok(())

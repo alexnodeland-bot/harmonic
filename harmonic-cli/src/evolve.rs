@@ -1,5 +1,5 @@
 use harmonic_core::{
-    EvolutionConfig, Genome, Individual, AudioAnalyzer, FitnessEvaluator, GenomeEncoding,
+    AudioAnalyzer, EvolutionConfig, FitnessEvaluator, Genome, GenomeEncoding, Individual,
 };
 use rand::Rng;
 use std::collections::VecDeque;
@@ -10,8 +10,10 @@ pub struct EvolutionRunner {
 
 #[derive(Debug, Clone)]
 pub struct GenerationStats {
+    #[allow(dead_code)]
     pub generation: u32,
     pub best_fitness: f32,
+    #[allow(dead_code)]
     pub avg_fitness: f32,
 }
 
@@ -59,18 +61,15 @@ impl EvolutionRunner {
                 .max_by(|a, b| {
                     let a_score = a.fitness.map(|f| f.score).unwrap_or(0.0);
                     let b_score = b.fitness.map(|f| f.score).unwrap_or(0.0);
-                    a_score.partial_cmp(&b_score).unwrap_or(std::cmp::Ordering::Equal)
+                    a_score
+                        .partial_cmp(&b_score)
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 })
                 .cloned()
                 .unwrap();
 
             if let Some(gen_fitness) = gen_best.fitness {
-                if gen_fitness.score
-                    > best_individual
-                        .fitness
-                        .map(|f| f.score)
-                        .unwrap_or(0.0)
-                {
+                if gen_fitness.score > best_individual.fitness.map(|f| f.score).unwrap_or(0.0) {
                     best_individual = gen_best.clone();
                 }
             }
@@ -114,7 +113,9 @@ impl EvolutionRunner {
             population_sorted.sort_by(|a, b| {
                 let a_score = a.fitness.map(|f| f.score).unwrap_or(0.0);
                 let b_score = b.fitness.map(|f| f.score).unwrap_or(0.0);
-                b_score.partial_cmp(&a_score).unwrap_or(std::cmp::Ordering::Equal)
+                b_score
+                    .partial_cmp(&a_score)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
 
             new_population.extend_from_slice(&population_sorted[0..elite_size]);
@@ -126,7 +127,9 @@ impl EvolutionRunner {
                 let p2_idx = rng.gen_range(0..population.len());
 
                 let mut offspring = if rng.gen::<f32>() < self.config.crossover_rate {
-                    population[p1_idx].genome.crossover(&population[p2_idx].genome)
+                    population[p1_idx]
+                        .genome
+                        .crossover(&population[p2_idx].genome)
                 } else {
                     population[p1_idx].genome.clone()
                 };
