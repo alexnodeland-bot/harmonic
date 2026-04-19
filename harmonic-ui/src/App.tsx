@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './App.css';
+import { startPlayback, stopPlayback } from './audio';
 
 interface PatchAnalysis {
   rms: number;
@@ -8,7 +9,13 @@ interface PatchAnalysis {
 }
 
 export const App: React.FC = () => {
-  const [patch, setPatch] = useState<string>('{}');
+  const [patch, setPatch] = useState<string>(JSON.stringify({
+    oscillators: [{
+      type: 'sine',
+      frequency: 440,
+      amplitude: 0.5,
+    }]
+  }, null, 2));
   const [analysis, setAnalysis] = useState<PatchAnalysis | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -60,8 +67,17 @@ export const App: React.FC = () => {
   };
 
   const togglePlayback = () => {
-    setIsPlaying(!isPlaying);
-    // In production: call WASM synthesize_patch and play audio
+    if (isPlaying) {
+      stopPlayback();
+      setIsPlaying(false);
+    } else {
+      const success = startPlayback(patch);
+      if (success) {
+        setIsPlaying(true);
+      } else {
+        console.error('Failed to start playback');
+      }
+    }
   };
 
   const exportPatch = () => {
