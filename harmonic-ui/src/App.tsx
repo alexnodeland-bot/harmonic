@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { startPlayback, stopPlayback } from './audio';
+import {
+  startPlayback,
+  stopPlayback,
+  generateRandomPatch,
+  mutatePatches,
+  getDefaultPatch,
+  getAnalyser,
+  type PatchConfig,
+} from './synth';
 
 interface PatchAnalysis {
   rms: number;
@@ -9,61 +17,82 @@ interface PatchAnalysis {
 }
 
 export const App: React.FC = () => {
-  const [patch, setPatch] = useState<string>(JSON.stringify({
-    oscillators: [{
-      type: 'sine',
-      frequency: 440,
-      amplitude: 0.5,
-    }]
-  }, null, 2));
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [patch, setPatch] = useState<string>(JSON.stringify(getDefaultPatch(), null, 2));
   const [analysis, setAnalysis] = useState<PatchAnalysis | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const generatePatch = async () => {
-    try {
-      // In production, this would call the WASM function
-      // const wasm = await import('./pkg/harmonic_ui');
-      // const newPatch = wasm.create_random_patch();
-      // setPatch(newPatch);
-      setPatch(JSON.stringify({
-        oscillators: [{
-          type: 'sine',
-          frequency: Math.random() * 1980 + 20,
-          amplitude: Math.random() * 0.9 + 0.1,
-        }]
-      }, null, 2));
-    } catch (error) {
-      console.error('Error generating patch:', error);
-    }
+  // Spectrum visualization
+  useEffect(() => {
+    if (!isPlaying || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const analyser = getAnalyser();
+    if (!analyser) return;
+
+    const draw = () => {
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      // Clear
+      ctx.fillStyle = 'rgb(20, 20, 20)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw bars
+      ctx.fillStyle = '#00ff88';
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i += 3) {
+        const barHeight = (dataArray[i] / 255) * canvas.height;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 1;
+      }
+
+      animationFrameRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isPlaying]);
+
+  const generatePatch = () => {
+    const newPatch = generateRandomPatch();
+    setPatch(JSON.stringify(newPatch, null, 2));
   };
 
   const analyzePatch = async () => {
     try {
-      // In production, this would call the WASM function
-      // const wasm = await import('./pkg/harmonic_ui');
-      // const result = wasm.analyze_patch(patch, 1.0);
-      // setAnalysis(result);
+      const config: PatchConfig = JSON.parse(patch);
+      const totalAmp = config.oscillators.reduce((sum, o) => sum + o.amplitude, 0);
+      const centroid = config.oscillators.reduce(
+        (sum, o) => sum + (o.frequency * o.amplitude),
+        0
+      ) / (totalAmp || 1);
+
       setAnalysis({
-        rms: Math.random(),
-        centroid: Math.random() * 20000,
-        spectrum_peaks: [[440, 0.5], [880, 0.3]]
+        rms: totalAmp / config.oscillators.length,
+        centroid: centroid,
+        spectrum_peaks: config.oscillators.map((o, i) => [o.frequency, o.amplitude] as [number, number]),
       });
     } catch (error) {
       console.error('Error analyzing patch:', error);
     }
   };
 
-  const mutate = async () => {
-    try {
-      // const wasm = await import('./pkg/harmonic_ui');
-      // const mutated = wasm.mutate_patch(patch);
-      // setPatch(mutated);
-      const current = JSON.parse(patch);
-      current.oscillators[0].frequency *= (0.9 + Math.random() * 0.2);
-      setPatch(JSON.stringify(current, null, 2));
-    } catch (error) {
-      console.error('Error mutating patch:', error);
-    }
+  const mutate = () => {
+    const mutated = mutatePatches(patch);
+    setPatch(mutated);
   };
 
   const togglePlayback = () => {
@@ -74,8 +103,7 @@ export const App: React.FC = () => {
       const success = startPlayback(patch);
       if (success) {
         setIsPlaying(true);
-      } else {
-        console.error('Failed to start playback');
+        analyzePatch();
       }
     }
   };
@@ -83,77 +111,128 @@ export const App: React.FC = () => {
   const exportPatch = () => {
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(patch));
-    element.setAttribute('download', 'patch.json');
+    element.setAttribute('download', 'harmonic-patch.json');
     element.style.display = 'none';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
   };
 
+  const importPatch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsed = JSON.parse(content);
+        setPatch(JSON.stringify(parsed, null, 2));
+      } catch (error) {
+        alert('Invalid patch file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🎵 Harmonic - Patch Evolution</h1>
-        <p>Evolve audio synthesis patches with genetic algorithms</p>
+        <h1>🎵 Harmonic</h1>
+        <p>Evolve audio synthesis patches interactively</p>
       </header>
 
       <main className="app-main">
-        <section className="patch-editor">
-          <h2>Patch Editor</h2>
-          <textarea
-            value={patch}
-            onChange={(e) => setPatch(e.target.value)}
-            className="patch-input"
-            placeholder="Paste or edit patch JSON"
-          />
-        </section>
-
-        <section className="controls">
-          <button onClick={generatePatch} className="btn btn-primary">
-            ✨ Generate Random
-          </button>
-          <button onClick={mutate} className="btn btn-secondary">
-            🧬 Mutate
-          </button>
-          <button onClick={analyzePatch} className="btn btn-secondary">
-            📊 Analyze
-          </button>
-          <button
-            onClick={togglePlayback}
-            className={`btn ${isPlaying ? 'btn-danger' : 'btn-success'}`}
-          >
-            {isPlaying ? '⏹️ Stop' : '▶️ Play'}
-          </button>
-          <button onClick={exportPatch} className="btn btn-secondary">
-            💾 Export
-          </button>
-        </section>
-
-        {analysis && (
-          <section className="analysis">
-            <h2>Analysis</h2>
-            <div className="metrics">
-              <div className="metric">
-                <label>RMS Energy</label>
-                <span>{analysis.rms.toFixed(4)}</span>
-              </div>
-              <div className="metric">
-                <label>Spectral Centroid</label>
-                <span>{analysis.centroid.toFixed(2)} Hz</span>
-              </div>
+        <div className="layout">
+          {/* Control Panel */}
+          <section className="control-panel">
+            <h2>Patch Control</h2>
+            <div className="button-group">
+              <button onClick={generatePatch} className="btn btn-primary">
+                ✨ Random
+              </button>
+              <button onClick={mutate} className="btn btn-secondary">
+                🧬 Mutate
+              </button>
+              <button
+                onClick={togglePlayback}
+                className={`btn ${isPlaying ? 'btn-danger' : 'btn-success'}`}
+              >
+                {isPlaying ? '⏹️ Stop' : '▶️ Play'}
+              </button>
             </div>
-            <div className="spectrum">
-              <h3>Spectrum Peaks</h3>
-              <ul>
-                {analysis.spectrum_peaks.slice(0, 5).map((peak, i) => (
-                  <li key={i}>
-                    {peak[0].toFixed(2)} Hz: {peak[1].toFixed(3)}
-                  </li>
-                ))}
-              </ul>
+
+            <div className="button-group">
+              <button onClick={analyzePatch} className="btn btn-secondary">
+                📊 Analyze
+              </button>
+              <button onClick={exportPatch} className="btn btn-secondary">
+                💾 Export
+              </button>
+              <label className="btn btn-secondary">
+                📂 Import
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importPatch}
+                  style={{ display: 'none' }}
+                />
+              </label>
             </div>
+
+            {/* Spectrum Visualizer */}
+            <div className="spectrum-section">
+              <h3>Spectrum</h3>
+              <canvas
+                ref={canvasRef}
+                width={300}
+                height={150}
+                className="spectrum-canvas"
+              />
+            </div>
+
+            {/* Analysis */}
+            {analysis && (
+              <div className="analysis-panel">
+                <h3>Analysis</h3>
+                <div className="metrics">
+                  <div className="metric">
+                    <label>Avg Amplitude</label>
+                    <span>{analysis.rms.toFixed(3)}</span>
+                  </div>
+                  <div className="metric">
+                    <label>Centroid</label>
+                    <span>{analysis.centroid.toFixed(0)} Hz</span>
+                  </div>
+                </div>
+                <div className="peaks">
+                  <h4>Oscillators</h4>
+                  <ul>
+                    {analysis.spectrum_peaks.slice(0, 5).map((peak, i) => (
+                      <li key={i}>
+                        {peak[0].toFixed(0)} Hz ({peak[1].toFixed(3)} amp)
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
           </section>
-        )}
+
+          {/* Patch Editor */}
+          <section className="patch-editor">
+            <h2>Patch JSON</h2>
+            <textarea
+              value={patch}
+              onChange={(e) => setPatch(e.target.value)}
+              className="patch-input"
+              placeholder="Edit patch configuration"
+            />
+            <p className="help-text">
+              Edit oscillators, envelope, and filter settings. Click Play to hear changes.
+            </p>
+          </section>
+        </div>
       </main>
     </div>
   );
