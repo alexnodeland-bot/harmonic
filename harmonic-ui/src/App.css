@@ -313,3 +313,34 @@ body {
   color: var(--text-dim);
   font-style: italic;
 }
+
+/* Smooth scrolling for all elements */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--surface-light);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Selection styling */
+::selection {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+::-moz-selection {
+  background: var(--primary);
+  color: var(--bg);
+}

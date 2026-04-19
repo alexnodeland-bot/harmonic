@@ -13,6 +13,7 @@ import { useAudio } from './hooks/useAudio';
 import { useStats, formatTimeElapsed, formatGenerationEstimate, getConvergenceStatus, getConvergenceStatusColor } from './hooks/useStats';
 import { useAnimations } from './hooks/useAnimations';
 import WaveformPreview from './components/WaveformPreview';
+import PatchDetailsPanel from './components/PatchDetailsPanel';
 import './styles/animations.css';
 import './Evolution.css';
 
@@ -455,58 +456,44 @@ export const Evolution: React.FC = () => {
 
       {selectedPatch && (
         <div className="patch-detail">
-          <h2>Selected Patch #{state.population.indexOf(selectedPatch) + 1}</h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
-              <label>Fitness</label>
-              <span style={{ color: `hsl(${selectedPatch.metrics.fitness * 120}, 100%, 50%)` }}>
-                {selectedPatch.metrics.fitness.toFixed(3)}
-              </span>
-            </div>
-            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
-              <label>Generation</label>
-              <span>{selectedPatch.generation}</span>
-            </div>
-            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
-              <label>Oscillators</label>
-              <span>{selectedPatch.patch.oscillators.length}</span>
-            </div>
-            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
-              <label>Filter</label>
-              <span>{selectedPatch.patch.filter?.enabled ? '✓ On' : '✗ Off'}</span>
-            </div>
-          </div>
+          <PatchDetailsPanel
+            patch={selectedPatch.patch}
+            fitness={selectedPatch.metrics.fitness}
+            generation={selectedPatch.generation}
+            rank={state.population.indexOf(selectedPatch) + 1}
+          />
           
           {/* Waveform Preview */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h3>Waveform Preview</h3>
+          <div style={{ marginTop: '2rem' }}>
+            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>🌊 Waveform Preview</h3>
             <WaveformPreview patch={selectedPatch.patch} width={400} height={150} />
           </div>
           
-          <h3>Patch JSON</h3>
-          <textarea
-            value={JSON.stringify(selectedPatch.patch, null, 2)}
-            readOnly
-            className="patch-json"
-          />
-          <button
-            onClick={() => {
-              const element = document.createElement('a');
-              element.setAttribute(
-                'href',
-                'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedPatch.patch, null, 2))
-              );
-              element.setAttribute('download', `patch-${selectedPatch.patch.id}.json`);
-              element.style.display = 'none';
-              document.body.appendChild(element);
-              element.click();
-              document.body.removeChild(element);
-            }}
-            className="btn btn-primary"
-          >
-            💾 Export
-          </button>
+          <div style={{ marginTop: '2rem' }}>
+            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>📄 Patch JSON</h3>
+            <textarea
+              value={JSON.stringify(selectedPatch.patch, null, 2)}
+              readOnly
+              className="patch-json"
+            />
+            <button
+              onClick={() => {
+                const element = document.createElement('a');
+                element.setAttribute(
+                  'href',
+                  'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(selectedPatch.patch, null, 2))
+                );
+                element.setAttribute('download', `patch-${selectedPatch.patch.id}.json`);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+              }}
+              className="btn btn-primary"
+            >
+              💾 Export
+            </button>
+          </div>
         </div>
       )}
     </div>
