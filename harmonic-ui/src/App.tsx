@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import Evolution from './Evolution';
 import {
   startPlayback,
   stopPlayback,
@@ -16,8 +17,11 @@ interface PatchAnalysis {
   spectrum_peaks: [number, number][];
 }
 
+type AppMode = 'explore' | 'evolve';
+
 export const App: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [mode, setMode] = useState<AppMode>('explore');
   const [patch, setPatch] = useState<string>(JSON.stringify(getDefaultPatch(), null, 2));
   const [analysis, setAnalysis] = useState<PatchAnalysis | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -100,7 +104,7 @@ export const App: React.FC = () => {
       stopPlayback();
       setIsPlaying(false);
     } else {
-      const success = startPlayback(patch);
+      const success = startPlayback(patch, 1.0);
       if (success) {
         setIsPlaying(true);
         analyzePatch();
@@ -135,14 +139,47 @@ export const App: React.FC = () => {
     reader.readAsText(file);
   };
 
+  if (mode === 'evolve') {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <h1>🎵 Harmonic</h1>
+          <p>Evolve audio synthesis patches with genetic algorithms</p>
+        </header>
+
+        <main className="app-main">
+          <div className="mode-tabs">
+            <button className="mode-tab" onClick={() => setMode('explore')}>
+              🎚️ Explore
+            </button>
+            <button className="mode-tab active" onClick={() => setMode('evolve')}>
+              🧬 Evolve
+            </button>
+          </div>
+
+          <Evolution />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>🎵 Harmonic</h1>
-        <p>Evolve audio synthesis patches interactively</p>
+        <p>Explore and evolve audio synthesis patches</p>
       </header>
 
       <main className="app-main">
+        <div className="mode-tabs">
+          <button className="mode-tab active" onClick={() => setMode('explore')}>
+            🎚️ Explore
+          </button>
+          <button className="mode-tab" onClick={() => setMode('evolve')}>
+            🧬 Evolve
+          </button>
+        </div>
+
         <div className="layout">
           {/* Control Panel */}
           <section className="control-panel">

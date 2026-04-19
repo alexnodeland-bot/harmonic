@@ -59,6 +59,36 @@ body {
   margin: 0 auto;
 }
 
+.mode-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--surface-light);
+  padding-bottom: 0;
+}
+
+.mode-tab {
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.mode-tab:hover {
+  color: var(--text);
+}
+
+.mode-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
 .layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -279,11 +309,4 @@ body {
   font-size: 0.85rem;
   color: var(--text-dim);
   font-style: italic;
-}
-
-/* Utilities */
-.help-text {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--text-dim);
 }

@@ -31,6 +31,21 @@ export interface PatchConfig {
   envelope: EnvelopeConfig;
   filter?: FilterConfig;
   masterVolume: number;
+  id?: string;
+  generationCreated?: number;
+  parents?: string[];
+}
+
+export interface SpectrumData {
+  frequencies: number[];
+  magnitudes: number[];
+}
+
+export interface FitnessMetrics {
+  rms: number;
+  centroid: number;
+  spectrumPeaks: [number, number][];
+  fitness: number;
 }
 
 const defaultPatch: PatchConfig = {
@@ -75,7 +90,7 @@ export function getAnalyser(): AnalyserNode | null {
   return analyser;
 }
 
-export function startPlayback(patchJson: string): boolean {
+export function startPlayback(patchJson: string, duration: number = 1.0): boolean {
   try {
     const context = initAudio();
     if (!context || !mainGain) return false;
@@ -107,6 +122,7 @@ export function startPlayback(patchJson: string): boolean {
 
     const startTime = context.currentTime;
     const env = config.envelope;
+    const sustainDuration = Math.max(0, duration - env.attack - env.decay - env.release);
 
     // Create oscillators
     config.oscillators.forEach((oscConfig) => {
@@ -132,11 +148,11 @@ export function startPlayback(patchJson: string): boolean {
       );
       gain.gain.setValueAtTime(
         oscConfig.amplitude * env.sustain * (config.masterVolume * 0.5),
-        startTime + 0.5
+        startTime + env.attack + env.decay + sustainDuration
       );
       gain.gain.linearRampToValueAtTime(
         0,
-        startTime + 0.5 + env.release
+        startTime + duration + env.release
       );
 
       osc.connect(gain);
@@ -144,7 +160,7 @@ export function startPlayback(patchJson: string): boolean {
       gain.connect(target);
 
       osc.start(startTime);
-      osc.stop(startTime + 0.5 + env.release);
+      osc.stop(startTime + duration + env.release);
 
       oscillators.push(osc);
       gainNodes.push(gain);
@@ -206,7 +222,7 @@ export function generateRandomPatch(): PatchConfig {
   };
 }
 
-export function mutatePatches(patchJson: string): string {
+export function mutatePatches(patchJson: string, mutationRate: number = 0.2): string {
   let config: PatchConfig;
   try {
     config = JSON.parse(patchJson);
@@ -214,18 +230,167 @@ export function mutatePatches(patchJson: string): string {
     return JSON.stringify(getDefaultPatch());
   }
 
-  // Random mutations
+  // Apply mutation rate - controls how much things change
+  const shouldMutate = (rate: number) => Math.random() < rate;
+
+  // Random mutations with mutation rate control
   config.oscillators = config.oscillators.map((osc) => ({
     ...osc,
-    frequency: osc.frequency * (0.8 + Math.random() * 0.4),
-    amplitude: Math.max(0.01, Math.min(1, osc.amplitude + (Math.random() - 0.5) * 0.3)),
-    detuning: (osc.detuning || 0) + (Math.random() - 0.5) * 20,
+    frequency: shouldMutate(mutationRate)
+      ? osc.frequency * (0.8 + Math.random() * 0.4)
+      : osc.frequency,
+    amplitude: shouldMutate(mutationRate)
+      ? Math.max(0.01, Math.min(1, osc.amplitude + (Math.random() - 0.5) * 0.3))
+      : osc.amplitude,
+    detuning: shouldMutate(mutationRate)
+      ? (osc.detuning || 0) + (Math.random() - 0.5) * 20
+      : osc.detuning || 0,
   }));
 
-  if (config.filter) {
+  // Occasionally add/remove oscillators
+  if (shouldMutate(mutationRate * 0.5)) {
+    if (config.oscillators.length < 5 && Math.random() > 0.5) {
+      // Add oscillator
+      const newOsc: OscillatorConfig = {
+        type: ['sine', 'square', 'triangle', 'sawtooth'][Math.floor(Math.random() * 4)] as any,
+        frequency: Math.random() * 2000 + 50,
+        amplitude: Math.random() * 0.5 + 0.1,
+        detuning: (Math.random() - 0.5) * 50,
+      };
+      config.oscillators.push(newOsc);
+    } else if (config.oscillators.length > 1) {
+      // Remove oscillator
+      config.oscillators = config.oscillators.slice(0, -1);
+    }
+  }
+
+  if (config.filter && shouldMutate(mutationRate)) {
     config.filter.frequency = Math.max(100, Math.min(20000, config.filter.frequency * (0.7 + Math.random() * 0.6)));
     config.filter.resonance = Math.max(0.1, Math.min(20, config.filter.resonance + (Math.random() - 0.5) * 4));
   }
 
   return JSON.stringify(config, null, 2);
+}
+
+export function crossoverPatches(parent1Json: string, parent2Json: string, crossoverRate: number = 0.5): string {
+  let p1: PatchConfig, p2: PatchConfig;
+  
+  try {
+    p1 = JSON.parse(parent1Json);
+    p2 = JSON.parse(parent2Json);
+  } catch {
+    return JSON.stringify(generateRandomPatch());
+  }
+
+  const child: PatchConfig = {
+    oscillators: [],
+    envelope: { ...p1.envelope },
+    filter: p1.filter ? { ...p1.filter } : undefined,
+    masterVolume: p1.masterVolume,
+    parents: [p1.id || 'unknown', p2.id || 'unknown'],
+  };
+
+  // Blend oscillators - randomly select from both parents
+  const maxOscs = Math.max(p1.oscillators.length, p2.oscillators.length);
+  const minOscs = Math.min(p1.oscillators.length, p2.oscillators.length);
+  const childOscCount = Math.ceil((minOscs + maxOscs) / 2 + (Math.random() - 0.5) * 2);
+
+  for (let i = 0; i < childOscCount; i++) {
+    if (i < p1.oscillators.length && i < p2.oscillators.length) {
+      // Blend both parent oscillators
+      const o1 = p1.oscillators[i];
+      const o2 = p2.oscillators[i];
+      const blend = Math.random();
+
+      child.oscillators.push({
+        type: Math.random() > 0.5 ? o1.type : o2.type,
+        frequency: o1.frequency * blend + o2.frequency * (1 - blend),
+        amplitude: o1.amplitude * blend + o2.amplitude * (1 - blend),
+        detuning: (o1.detuning || 0) * blend + (o2.detuning || 0) * (1 - blend),
+      });
+    } else if (i < p1.oscillators.length) {
+      child.oscillators.push({ ...p1.oscillators[i] });
+    } else if (i < p2.oscillators.length) {
+      child.oscillators.push({ ...p2.oscillators[i] });
+    }
+  }
+
+  // Blend envelope
+  const envBlend = Math.random();
+  child.envelope = {
+    attack: p1.envelope.attack * envBlend + p2.envelope.attack * (1 - envBlend),
+    decay: p1.envelope.decay * envBlend + p2.envelope.decay * (1 - envBlend),
+    sustain: p1.envelope.sustain * envBlend + p2.envelope.sustain * (1 - envBlend),
+    release: p1.envelope.release * envBlend + p2.envelope.release * (1 - envBlend),
+  };
+
+  // Blend filter if both have it
+  if (p1.filter && p2.filter) {
+    const filterBlend = Math.random();
+    child.filter = {
+      frequency: p1.filter.frequency * filterBlend + p2.filter.frequency * (1 - filterBlend),
+      resonance: p1.filter.resonance * filterBlend + p2.filter.resonance * (1 - filterBlend),
+      enabled: Math.random() > 0.5 ? p1.filter.enabled : p2.filter.enabled,
+    };
+  }
+
+  return JSON.stringify(child);
+}
+
+export function evaluateFitness(
+  patchJson: string,
+  targetMode: 'spectrum' | 'energy' | 'random' = 'energy'
+): FitnessMetrics {
+  let config: PatchConfig;
+  try {
+    config = JSON.parse(patchJson);
+  } catch {
+    return { rms: 0, centroid: 0, spectrumPeaks: [], fitness: 0 };
+  }
+
+  // Calculate spectrum characteristics
+  const totalAmp = config.oscillators.reduce((sum, o) => sum + o.amplitude, 0);
+  const rms = totalAmp / config.oscillators.length;
+
+  const centroid = config.oscillators.length > 0
+    ? config.oscillators.reduce((sum, o) => sum + o.frequency * o.amplitude, 0) / (totalAmp || 1)
+    : 0;
+
+  const spectrumPeaks = config.oscillators
+    .map((o) => [o.frequency, o.amplitude] as [number, number])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // Calculate fitness based on mode
+  let fitness = 0.5; // Base fitness
+
+  if (targetMode === 'energy') {
+    // Favor moderate-to-high energy
+    fitness = Math.min(1, totalAmp / 2);
+  } else if (targetMode === 'spectrum') {
+    // Favor balanced spectrum (multiple peaks, not too concentrated)
+    const peakVariance = config.oscillators.length > 1
+      ? config.oscillators.reduce((sum, o) => sum + Math.pow(o.frequency - centroid, 2), 0) / config.oscillators.length
+      : 0;
+    fitness = Math.min(1, 0.3 + Math.sqrt(peakVariance) / 5000);
+  } else if (targetMode === 'random') {
+    // Random fitness for baseline comparison
+    fitness = Math.random();
+  }
+
+  // Bonus for having multiple oscillators
+  fitness = fitness * 0.8 + (config.oscillators.length / 6) * 0.2;
+
+  // Bonus for reasonable values (not extreme)
+  const avgFreq = config.oscillators.reduce((sum, o) => sum + o.frequency, 0) / config.oscillators.length;
+  if (avgFreq >= 50 && avgFreq <= 5000) {
+    fitness *= 1.1;
+  }
+
+  return {
+    rms,
+    centroid,
+    spectrumPeaks,
+    fitness: Math.min(1, Math.max(0, fitness)),
+  };
 }
