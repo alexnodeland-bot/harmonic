@@ -1,5 +1,5 @@
 use harmonic_core::{
-    EvolutionConfig, Genome, Individual, AudioAnalyzer, FitnessEvaluator, Fitness, GenomeEncoding,
+    EvolutionConfig, Genome, Individual, AudioAnalyzer, FitnessEvaluator, GenomeEncoding,
 };
 use rand::Rng;
 use std::collections::VecDeque;
@@ -30,8 +30,10 @@ impl EvolutionRunner {
             None, // Load target spectrum if config.target_audio is set
         );
 
+        let population_size = self.config.population_size as usize;
+
         // Initialize population
-        let mut population: Vec<Individual> = (0..self.config.population_size)
+        let mut population: Vec<Individual> = (0..population_size)
             .map(|_| {
                 let mut genome = Genome::random();
                 genome.metadata.generation = 0;
@@ -107,7 +109,7 @@ impl EvolutionRunner {
             let mut new_population = Vec::new();
 
             // Keep elite
-            let elite_size = self.config.elite_size.min(population.len());
+            let elite_size = std::cmp::min(self.config.elite_size as usize, population.len());
             let mut population_sorted = population.clone();
             population_sorted.sort_by(|a, b| {
                 let a_score = a.fitness.map(|f| f.score).unwrap_or(0.0);
@@ -119,7 +121,7 @@ impl EvolutionRunner {
 
             // Create offspring
             let mut rng = rand::thread_rng();
-            while new_population.len() < self.config.population_size as usize {
+            while new_population.len() < population_size {
                 let p1_idx = rng.gen_range(0..population.len());
                 let p2_idx = rng.gen_range(0..population.len());
 
@@ -137,7 +139,7 @@ impl EvolutionRunner {
                 new_population.push(Individual::new(offspring));
             }
 
-            population = new_population[0..self.config.population_size as usize].to_vec();
+            population = new_population[0..population_size].to_vec();
 
             // Evaluate new population
             for individual in population.iter_mut() {

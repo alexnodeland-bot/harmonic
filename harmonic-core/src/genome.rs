@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
 
 /// A genome represents a quiver synthesis patch as JSON serialized to bytes
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -12,7 +11,7 @@ pub struct Genome {
     pub metadata: GenomeMetadata,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct GenomeMetadata {
     pub generation: u32,
     pub id: String,
@@ -195,7 +194,23 @@ mod tests {
 
     #[test]
     fn test_genome_serialization() {
-        let genome = Genome::random();
+        let patch = json!({
+            "oscillators": [
+                {
+                    "type": "sine",
+                    "frequency": 440.0,
+                    "amplitude": 0.5,
+                    "phase": 0.0
+                }
+            ],
+            "envelope": {
+                "attack": 0.1,
+                "decay": 0.2,
+                "sustain": 0.7,
+                "release": 0.3
+            }
+        });
+        let genome = Genome::new(patch);
         let bytes = genome.to_bytes().unwrap();
         let restored = Genome::from_bytes(&bytes).unwrap();
         assert_eq!(genome.patch, restored.patch);

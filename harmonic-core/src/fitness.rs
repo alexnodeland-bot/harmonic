@@ -1,4 +1,3 @@
-use ndarray::{Array1, Array2};
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
@@ -105,7 +104,7 @@ impl FitnessEvaluator {
             self.spectrum_distance(&spectrum, target)
         } else {
             // Without target, measure peak presence
-            spectrum.iter().fold(0.0, |a, &b| a.max(b))
+            spectrum.iter().fold(0.0f32, |a: f32, &b| a.max(b))
         };
 
         // Compute energy

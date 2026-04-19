@@ -1,4 +1,4 @@
-use harmonic_core::{EvolutionConfig, Genome};
+use harmonic_core::{EvolutionConfig, Genome, GenomeEncoding};
 use std::path::PathBuf;
 
 pub fn init_command(dir: &PathBuf, config_path: &PathBuf) -> anyhow::Result<()> {

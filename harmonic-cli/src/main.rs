@@ -1,7 +1,4 @@
 use clap::{Parser, Subcommand};
-use harmonic_core::{
-    EvolutionConfig, FitnessEvaluator, FitnessWeights, AudioAnalyzer, Genome, Individual,
-};
 use std::path::PathBuf;
 
 mod evolve;

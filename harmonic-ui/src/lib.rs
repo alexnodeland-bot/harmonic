@@ -14,7 +14,7 @@ pub fn synthesize_patch(patch_json: &str, duration: f32) -> Result<Vec<f32>, JsV
 }
 
 #[wasm_bindgen]
-pub fn analyze_patch(patch_json: &str, duration: f32) -> Result<JsValue, JsValue> {
+pub fn analyze_patch(patch_json: &str, duration: f32) -> Result<String, JsValue> {
     let patch: serde_json::Value = serde_json::from_str(patch_json)
         .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
@@ -29,16 +29,15 @@ pub fn analyze_patch(patch_json: &str, duration: f32) -> Result<JsValue, JsValue
         "centroid": analysis.centroid,
         "spectrum_peaks": analysis.spectrum.iter()
             .enumerate()
-            .filter(|(_, &v)| v > 0.01)
+            .filter(|(_, v)| **v > 0.01)
             .map(|(i, v)| {
                 let freq = i as f32 * (44100.0 / (analysis.spectrum.len() * 2) as f32);
-                [freq, v]
+                [freq, *v]
             })
             .collect::<Vec<_>>()
     });
 
-    Ok(JsValue::from_serde(&result)
-        .map_err(|e| JsValue::from_str(&e.to_string()))?)
+    Ok(result.to_string())
 }
 
 #[wasm_bindgen]
