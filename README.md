@@ -7,6 +7,10 @@
 
 **Harmonic** is a Rust library and CLI tool for evolving audio synthesis patches using genetic algorithms and fugue-evo. It combines the power of evolutionary computing with audio synthesis to discover novel and interesting soundscapes.
 
+## 🎮 [Try the Demo](https://alexnodeland-bot.github.io/harmonic/ui/)
+
+Interactive web UI to generate, mutate, and listen to patches in your browser.
+
 ## 📚 [Documentation](https://alexnodeland-bot.github.io/harmonic/)
 
 Explore the complete guide:
