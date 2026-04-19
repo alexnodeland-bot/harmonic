@@ -9,6 +9,11 @@ import {
   type PatchConfig,
   type FitnessMetrics,
 } from './synth';
+import { useAudio } from './hooks/useAudio';
+import { useStats, formatTimeElapsed, formatGenerationEstimate, getConvergenceStatus, getConvergenceStatusColor } from './hooks/useStats';
+import { useAnimations } from './hooks/useAnimations';
+import WaveformPreview from './components/WaveformPreview';
+import './styles/animations.css';
 import './Evolution.css';
 
 interface PopulationEntry {
@@ -52,7 +57,18 @@ export const Evolution: React.FC = () => {
 
   const [selectedPatch, setSelectedPatch] = useState<PopulationEntry | null>(null);
   const [playingPatch, setPlayingPatch] = useState<string | null>(null);
+  const [startTimeMs, setStartTimeMs] = useState<number | undefined>();
+  const [bestFitnessThisSession, setBestFitnessThisSession] = useState<number>(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // Audio feedback
+  const { playSuccessChime, playSweepTone } = useAudio();
+  
+  // Animations
+  const { staggerElements, celebrationGlow } = useAnimations();
+  
+  // Stats
+  const stats = useStats(state.history, startTimeMs);
 
   // Initialize population
   const initializePopulation = () => {
@@ -70,6 +86,8 @@ export const Evolution: React.FC = () => {
   // Evolution loop
   const runEvolution = async () => {
     setState((prev) => ({ ...prev, isRunning: true }));
+    setStartTimeMs(Date.now());
+    setBestFitnessThisSession(0);
 
     let population = state.population.length > 0 ? state.population : initializePopulation();
     let generation = state.generation || 0;
@@ -87,12 +105,22 @@ export const Evolution: React.FC = () => {
 
       // Track history
       const fitnesses = population.map((p) => p.metrics.fitness);
+      const bestFitness = Math.max(...fitnesses);
+      const avgFitness = fitnesses.reduce((a, b) => a + b) / fitnesses.length;
+      const worstFitness = Math.min(...fitnesses);
+      
       history.push({
         gen,
-        best: Math.max(...fitnesses),
-        avg: fitnesses.reduce((a, b) => a + b) / fitnesses.length,
-        worst: Math.min(...fitnesses),
+        best: bestFitness,
+        avg: avgFitness,
+        worst: worstFitness,
       });
+      
+      // Celebration logic: new best found
+      if (bestFitness > bestFitnessThisSession) {
+        setBestFitnessThisSession(bestFitness);
+        playSuccessChime();
+      }
 
       // Keep elite
       const elite = population.slice(0, config.eliteSize);
@@ -341,6 +369,34 @@ export const Evolution: React.FC = () => {
                 <label>Avg Fitness</label>
                 <span>{state.history[state.history.length - 1].avg.toFixed(3)}</span>
               </div>
+              <div className="stat">
+                <label>Improvement Rate</label>
+                <span>{stats.improvementRate.toFixed(4)}</span>
+              </div>
+              <div className="stat">
+                <label>Diversity</label>
+                <span>{(stats.populationDiversity * 100).toFixed(1)}%</span>
+              </div>
+              <div className="stat">
+                <label>Time Elapsed</label>
+                <span>{formatTimeElapsed(stats.timeElapsedMs)}</span>
+              </div>
+              {stats.bestGeneration !== null && (
+                <div className="stat">
+                  <label>Best Generation</label>
+                  <span>Gen {stats.bestGeneration}</span>
+                </div>
+              )}
+              <div className="stat">
+                <label>Est. Convergence</label>
+                <span>{formatGenerationEstimate(stats.estimatedConvergenceGen, state.generation)}</span>
+              </div>
+              <div className="stat">
+                <label>Status</label>
+                <span style={{ color: getConvergenceStatusColor(stats.convergenceScore) }}>
+                  {getConvergenceStatus(stats.convergenceScore)}
+                </span>
+              </div>
             </>
           )}
         </div>
@@ -361,12 +417,14 @@ export const Evolution: React.FC = () => {
                 selectedPatch?.patch.id === entry.patch.id ? 'selected' : ''
               }`}
               style={{
-                backgroundColor: `rgba(0, 255, ${Math.floor(entry.metrics.fitness * 255)}, 0.1)`,
+                backgroundColor: `rgba(${Math.floor((1 - entry.metrics.fitness) * 255)}, ${Math.floor(entry.metrics.fitness * 200)}, 0, 0.08)`,
               }}
             >
               <div className="patch-header">
                 <span className="rank">#{i + 1}</span>
-                <span className="fitness" style={{ color: `hsl(${entry.metrics.fitness * 120}, 100%, 50%)` }}>
+                <span className="fitness" style={{ 
+                  color: `hsl(${Math.max(0, Math.min(120, entry.metrics.fitness * 120))}, 100%, ${50 - entry.metrics.fitness * 10}%)` 
+                }}>
                   {entry.metrics.fitness.toFixed(3)}
                 </span>
               </div>
@@ -398,6 +456,35 @@ export const Evolution: React.FC = () => {
       {selectedPatch && (
         <div className="patch-detail">
           <h2>Selected Patch #{state.population.indexOf(selectedPatch) + 1}</h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
+              <label>Fitness</label>
+              <span style={{ color: `hsl(${selectedPatch.metrics.fitness * 120}, 100%, 50%)` }}>
+                {selectedPatch.metrics.fitness.toFixed(3)}
+              </span>
+            </div>
+            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
+              <label>Generation</label>
+              <span>{selectedPatch.generation}</span>
+            </div>
+            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
+              <label>Oscillators</label>
+              <span>{selectedPatch.patch.oscillators.length}</span>
+            </div>
+            <div className="stat" style={{ background: 'var(--surface-light)', padding: '1rem', borderRadius: '6px' }}>
+              <label>Filter</label>
+              <span>{selectedPatch.patch.filter?.enabled ? '✓ On' : '✗ Off'}</span>
+            </div>
+          </div>
+          
+          {/* Waveform Preview */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3>Waveform Preview</h3>
+            <WaveformPreview patch={selectedPatch.patch} width={400} height={150} />
+          </div>
+          
+          <h3>Patch JSON</h3>
           <textarea
             value={JSON.stringify(selectedPatch.patch, null, 2)}
             readOnly

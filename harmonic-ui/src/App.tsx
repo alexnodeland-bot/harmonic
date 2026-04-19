@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import './styles/animations.css';
 import Evolution from './Evolution';
+import Onboarding from './components/Onboarding';
+import WaveformPreview from './components/WaveformPreview';
+import { useAudio } from './hooks/useAudio';
+import { useKeyboardShortcuts, createHelpOverlay } from './utils/shortcuts';
 import {
   startPlayback,
   stopPlayback,
@@ -26,6 +31,23 @@ export const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<PatchAnalysis | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
+  
+  // Audio feedback
+  const { playClickSound, playSuccessChime, playSweepTone, playFadeOut } = useAudio();
+  
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onPlayToggle: () => {
+      // Will be set after togglePlayback is defined
+    },
+    onMutate: () => mutate(),
+    onRandom: () => generatePatch(),
+    onExport: () => exportPatch(),
+    onShowHelp: () => {
+      const overlay = createHelpOverlay();
+      document.body.appendChild(overlay);
+    },
+  });
 
   // Spectrum visualization
   useEffect(() => {
@@ -71,6 +93,7 @@ export const App: React.FC = () => {
   }, [isPlaying]);
 
   const generatePatch = () => {
+    playClickSound();
     const newPatch = generateRandomPatch();
     setPatch(JSON.stringify(newPatch, null, 2));
   };
@@ -95,15 +118,18 @@ export const App: React.FC = () => {
   };
 
   const mutate = () => {
+    playClickSound();
     const mutated = mutatePatches(patch);
     setPatch(mutated);
   };
 
   const togglePlayback = () => {
     if (isPlaying) {
+      playFadeOut(0.5);
       stopPlayback();
       setIsPlaying(false);
     } else {
+      playSweepTone(200, 800, 0.2);
       const success = startPlayback(patch, 1.0);
       if (success) {
         setIsPlaying(true);
@@ -113,6 +139,7 @@ export const App: React.FC = () => {
   };
 
   const exportPatch = () => {
+    playClickSound();
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(patch));
     element.setAttribute('download', 'harmonic-patch.json');
@@ -165,6 +192,8 @@ export const App: React.FC = () => {
 
   return (
     <div className="app">
+      <Onboarding />
+      
       <header className="app-header">
         <h1>🎵 Harmonic</h1>
         <p>Explore and evolve audio synthesis patches</p>
@@ -172,10 +201,10 @@ export const App: React.FC = () => {
 
       <main className="app-main">
         <div className="mode-tabs">
-          <button className="mode-tab active" onClick={() => setMode('explore')}>
+          <button className="mode-tab active" onClick={() => setMode('explore')} data-onboarding="explore-tab">
             🎚️ Explore
           </button>
-          <button className="mode-tab" onClick={() => setMode('evolve')}>
+          <button className="mode-tab" onClick={() => setMode('evolve')} data-onboarding="evolve-tab">
             🧬 Evolve
           </button>
         </div>
@@ -185,7 +214,7 @@ export const App: React.FC = () => {
           <section className="control-panel">
             <h2>Patch Control</h2>
             <div className="button-group">
-              <button onClick={generatePatch} className="btn btn-primary">
+              <button onClick={generatePatch} className="btn btn-primary" data-onboarding="random-btn">
                 ✨ Random
               </button>
               <button onClick={mutate} className="btn btn-secondary">
@@ -194,6 +223,7 @@ export const App: React.FC = () => {
               <button
                 onClick={togglePlayback}
                 className={`btn ${isPlaying ? 'btn-danger' : 'btn-success'}`}
+                data-onboarding="play-btn"
               >
                 {isPlaying ? '⏹️ Stop' : '▶️ Play'}
               </button>
@@ -226,6 +256,19 @@ export const App: React.FC = () => {
                 height={150}
                 className="spectrum-canvas"
               />
+              
+              {/* Waveform Preview */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <h3>Patch Waveform</h3>
+                {(() => {
+                  try {
+                    const config = JSON.parse(patch);
+                    return <WaveformPreview patch={config} width={280} height={100} />;
+                  } catch {
+                    return <p style={{ color: 'var(--text-dim)' }}>Invalid patch JSON</p>;
+                  }
+                })()}
+              </div>
             </div>
 
             {/* Analysis */}

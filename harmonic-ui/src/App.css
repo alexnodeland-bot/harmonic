@@ -75,9 +75,10 @@ body {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
+  position: relative;
 }
 
 .mode-tab:hover {
@@ -87,6 +88,7 @@ body {
 .mode-tab.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
+  animation: tabSlideIn 0.3s ease-out;
 }
 
 .layout {
@@ -142,7 +144,7 @@ body {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -153,7 +155,8 @@ body {
 }
 
 .btn:active {
-  transform: translateY(0);
+  animation: buttonPress 0.2s ease-out;
+  transform: scale(0.95);
 }
 
 .btn-primary {

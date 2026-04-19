@@ -1,0 +1,488 @@
+/* Comprehensive Animation System for Harmonic UI */
+
+/* ============================================================================
+   FADE & SLIDE ANIMATIONS
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* ============================================================================
+   BUTTON FEEDBACK
+   ========================================================================== */
+
+@keyframes buttonPress {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes buttonHoverLift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes buttonActive {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.97);
+  }
+}
+
+/* ============================================================================
+   TAB TRANSITIONS
+   ========================================================================== */
+
+@keyframes tabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes tabUnderlineExpand {
+  from {
+    width: 0;
+    transform: translateX(0);
+  }
+  to {
+    width: 100%;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================================================
+   PATCH CARD ANIMATIONS
+   ========================================================================== */
+
+@keyframes patchCardStagger {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes patchCardSelected {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px 5px rgba(0, 255, 136, 0);
+  }
+}
+
+@keyframes patchCardGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+  }
+}
+
+/* ============================================================================
+   FITNESS BAR ANIMATIONS
+   ========================================================================== */
+
+@keyframes fitnessBarFill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes fitnessBarPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ============================================================================
+   CELEBRATION & FLASH EFFECTS
+   ========================================================================== */
+
+@keyframes celebrationFlash {
+  0% {
+    background-color: rgba(255, 255, 100, 0);
+  }
+  50% {
+    background-color: rgba(255, 255, 100, 0.3);
+  }
+  100% {
+    background-color: rgba(255, 255, 100, 0);
+  }
+}
+
+@keyframes celebrationGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 200, 0, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 40px 10px rgba(255, 200, 0, 0);
+  }
+}
+
+/* ============================================================================
+   PARTICLE & SPARKLE EFFECTS
+   ========================================================================== */
+
+@keyframes particleFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) translateX(var(--tx, 0)) scale(0);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   NUMBER COUNTER ANIMATIONS
+   ========================================================================== */
+
+@keyframes numberFlip {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   LOADING SKELETON
+   ========================================================================== */
+
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* ============================================================================
+   TOOLTIP & POPUP ANIMATIONS
+   ========================================================================== */
+
+@keyframes tooltipSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popupScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes overlayFade {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* ============================================================================
+   ONBOARDING ANIMATIONS
+   ========================================================================== */
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 20px rgba(0, 255, 136, 0);
+  }
+}
+
+@keyframes stepTransition {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================================
+   SMOOTH SCROLL & SCROLL BEHAVIOR
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ============================================================================
+   WAVEFORM & SPECTRUM ANIMATIONS
+   ========================================================================== */
+
+@keyframes waveformDraw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes spectrumBandMove {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(var(--height, 0));
+  }
+}
+
+/* ============================================================================
+   UTILITY ANIMATION CLASSES
+   ========================================================================== */
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fade-out {
+  animation: fadeOut 0.3s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+.animate-slide-out-left {
+  animation: slideOutLeft 0.3s ease-out;
+}
+
+.animate-slide-out-right {
+  animation: slideOutRight 0.3s ease-out;
+}
+
+.animate-button-press {
+  animation: buttonPress 0.2s ease-out;
+}
+
+.animate-button-active {
+  animation: buttonActive 0.1s ease-out;
+}
+
+.animate-patch-card-stagger {
+  animation: patchCardStagger 0.4s ease-out;
+}
+
+.animate-patch-card-glow {
+  animation: patchCardGlow 1.5s ease-in-out infinite;
+}
+
+.animate-celebration-flash {
+  animation: celebrationFlash 0.6s ease-out;
+}
+
+.animate-celebration-glow {
+  animation: celebrationGlow 0.8s ease-out;
+}
+
+.animate-tooltip-slide-up {
+  animation: tooltipSlideUp 0.2s ease-out;
+}
+
+.animate-popup-scale-in {
+  animation: popupScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-overlay-fade {
+  animation: overlayFade 0.3s ease-out;
+}
+
+.animate-highlight-pulse {
+  animation: highlightPulse 2s ease-in-out infinite;
+}
+
+.animate-skeleton-pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.animate-skeleton-shimmer {
+  animation: skeletonShimmer 2s infinite;
+}
+
+/* ============================================================================
+   REDUCED MOTION SUPPORT
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================================
+   TRANSITION UTILITIES
+   ========================================================================== */
+
+.transition-fast {
+  transition: all 0.15s ease-out;
+}
+
+.transition-normal {
+  transition: all 0.3s ease-out;
+}
+
+.transition-slow {
+  transition: all 0.5s ease-out;
+}
+
+.transition-smooth {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Specific property transitions */
+.transition-colors {
+  transition: color 0.3s ease-out, background-color 0.3s ease-out, border-color 0.3s ease-out;
+}
+
+.transition-transform {
+  transition: transform 0.3s ease-out;
+}
+
+.transition-opacity {
+  transition: opacity 0.3s ease-out;
+}
+
+.transition-shadow {
+  transition: box-shadow 0.3s ease-out;
+}
